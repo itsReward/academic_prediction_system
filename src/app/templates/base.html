@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>{% block title %}Academic Status Prediction System{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    {% block head_extras %}{% endblock %}
+</head>
+<body class="bg-light">
+    <!-- Header Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('web.index') }}">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" height="30" class="d-inline-block align-text-top me-2">
+                Academic Prediction System
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'web.index' %}active{% endif %}" href="{{ url_for('web.index') }}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'web.about' %}active{% endif %}" href="{{ url_for('web.about') }}">About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'web.contact' %}active{% endif %}" href="{{ url_for('web.contact') }}">Contact</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-1"></i> {{ current_user.name }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('web.profile') }}">Profile</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('web.settings') }}">Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'auth.login' %}active{% endif %}" href="{{ url_for('auth.login') }}">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'auth.register' %}active{% endif %}" href="{{ url_for('auth.register') }}">Register</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content Container -->
+    <div class="container-fluid">
+        <div class="row">
+            {% if current_user.is_authenticated %}
+            <!-- Sidebar (visible only when logged in) -->
+            <div class="col-md-3 col-lg-2 d-md-block bg-white sidebar collapse" id="sidebarMenu">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'web.dashboard' %}active{% endif %}" href="{{ url_for('web.dashboard') }}">
+                                <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                            </a>
+                        </li>
+                        {% if current_user.role == 'student' %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'web.student_dashboard' %}active{% endif %}" href="{{ url_for('web.student_dashboard') }}">
+                                <i class="fas fa-user-graduate me-2"></i> My Academic Status
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'web.recommendations' %}active{% endif %}" href="{{ url_for('web.recommendations') }}">
+                                <i class="fas fa-lightbulb me-2"></i> Recommendations
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.role == 'faculty' or current_user.role == 'admin' %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'web.faculty_dashboard' %}active{% endif %}" href="{{ url_for('web.faculty_dashboard') }}">
+                                <i class="fas fa-chalkboard-teacher me-2"></i> Faculty Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'web.student_list' %}active{% endif %}" href="{{ url_for('web.student_list') }}">
+                                <i class="fas fa-user-friends me-2"></i> Student List
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'web.analytics' %}active{% endif %}" href="{{ url_for('web.analytics') }}">
+                                <i class="fas fa-chart-bar me-2"></i> Analytics
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.role == 'admin' %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'web.admin_dashboard' %}active{% endif %}" href="{{ url_for('web.admin_dashboard') }}">
+                                <i class="fas fa-cogs me-2"></i> Admin Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'web.user_management' %}active{% endif %}" href="{{ url_for('web.user_management') }}">
+                                <i class="fas fa-users-cog me-2"></i> User Management
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'web.system_settings' %}active{% endif %}" href="{{ url_for('web.system_settings') }}">
+                                <i class="fas fa-sliders-h me-2"></i> System Settings
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item mt-3">
+                            <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                                <i class="fas fa-sign-out-alt me-2"></i> Logout
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <!-- Sidebar Divider -->
+                    <hr class="my-3">
+                    
+                    <!-- Help Section -->
+                    <div class="px-3 mb-3">
+                        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-1 text-muted">
+                            <span>Help & Resources</span>
+                        </h6>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('web.support') }}">
+                                    <i class="fas fa-question-circle me-2"></i> Support
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('web.documentation') }}">
+                                    <i class="fas fa-book me-2"></i> Documentation
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content Area -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                {% include 'partials/messages.html' %}
+                {% block content %}{% endblock %}
+            </main>
+            {% else %}
+            <!-- Content for non-authenticated users -->
+            <main class="col-12 px-4 py-4">
+                {% include 'partials/messages.html' %}
+                {% block content_full %}{% endblock %}
+            </main>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="footer mt-auto py-3 bg-dark text-white">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-0">&copy; {% now 'Y' %} Academic Status Prediction System</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="{{ url_for('web.privacy') }}" class="text-white text-decoration-none me-3">Privacy Policy</a>
+                    <a href="{{ url_for('web.terms') }}" class="text-white text-decoration-none me-3">Terms of Service</a>
+                    <a href="{{ url_for('web.contact') }}" class="text-white text-decoration-none">Contact</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <!-- Additional Scripts -->
+    {% block scripts %}{% endblock %}
+    
+    <!-- Toast Notifications -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 5">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto" id="toastTitle">Notification</strong>
+                <small id="toastTime">Just now</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">
+                This is a notification message.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

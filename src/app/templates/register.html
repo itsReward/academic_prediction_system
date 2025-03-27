@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Academic Prediction System{% endblock %}
+
+{% block content_full %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-xl-10 col-lg-12 col-md-9">
+            <div class="card o-hidden border-0 shadow-lg my-5">
+                <div class="card-body p-0">
+                    <div class="row">
+                        <div class="col-lg-5 d-none d-lg-block bg-register-image">
+                            <!-- Register image will be set via CSS -->
+                        </div>
+                        <div class="col-lg-7">
+                            <div class="p-5">
+                                <div class="text-center">
+                                    <h1 class="h4 text-gray-900 mb-4">Create an Account!</h1>
+                                </div>
+                                
+                                <!-- Display flash messages if any -->
+                                {% with messages = get_flashed_messages(with_categories=true) %}
+                                    {% if messages %}
+                                        {% for category, message in messages %}
+                                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                                {{ message }}
+                                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                            </div>
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endwith %}
+                                
+                                <form class="user" method="POST" action="{{ url_for('auth.register') }}">
+                                    {{ form.csrf_token }}
+                                    <div class="row mb-3">
+                                        <div class="col-sm-6 mb-3 mb-sm-0">
+                                            <input type="text" class="form-control form-control-user" id="firstName" 
+                                                name="first_name" placeholder="First Name" 
+                                                value="{{ form.first_name.data if form.first_name.data else '' }}" required>
+                                            {% if form.first_name.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in form.first_name.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <input type="text" class="form-control form-control-user" id="lastName" 
+                                                name="last_name" placeholder="Last Name" 
+                                                value="{{ form.last_name.data if form.last_name.data else '' }}" required>
+                                            {% if form.last_name.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in form.last_name.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <input type="email" class="form-control form-control-user" id="email" 
+                                            name="email" placeholder="Email Address" 
+                                            value="{{ form.email.data if form.email.data else '' }}" required>
+                                        {% if form.email.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.email.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <select class="form-select form-control-user" id="role" name="role" required>
+                                            <option value="" selected disabled>Select your role</option>
+                                            <option value="student" {% if form.role.data == 'student' %}selected{% endif %}>Student</option>
+                                            <option value="faculty" {% if form.role.data == 'faculty' %}selected{% endif %}>Faculty</option>
+                                        </select>
+                                        {% if form.role.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.role.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div id="studentFields" class="mb-3" style="display: {% if form.role.data == 'student' %}block{% else %}none{% endif %};">
+                                        <div class="row">
+                                            <div class="col-sm-6 mb-3 mb-sm-0">
+                                                <input type="text" class="form-control form-control-user" id="studentId" 
+                                                    name="student_id" placeholder="Student ID" 
+                                                    value="{{ form.student_id.data if form.student_id.data else '' }}">
+                                                {% if form.student_id.errors %}
+                                                    <div class="invalid-feedback d-block">
+                                                        {% for error in form.student_id.errors %}
+                                                            {{ error }}
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <select class="form-select form-control-user" id="course" name="course">
+                                                    <option value="" selected disabled>Select your course</option>
+                                                    {% for course in courses %}
+                                                        <option value="{{ course.id }}" {% if form.course.data == course.id %}selected{% endif %}>{{ course.name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                {% if form.course.errors %}
+                                                    <div class="invalid-feedback d-block">
+                                                        {% for error in form.course.errors %}
+                                                            {{ error }}
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="facultyFields" class="mb-3" style="display: {% if form.role.data == 'faculty' %}block{% else %}none{% endif %};">
+                                        <div class="row">
+                                            <div class="col-sm-6 mb-3 mb-sm-0">
+                                                <input type="text" class="form-control form-control-user" id="facultyId" 
+                                                    name="faculty_id" placeholder="Faculty ID" 
+                                                    value="{{ form.faculty_id.data if form.faculty_id.data else '' }}">
+                                                {% if form.faculty_id.errors %}
+                                                    <div class="invalid-feedback d-block">
+                                                        {% for error in form.faculty_id.errors %}
+                                                            {{ error }}
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <select class="form-select form-control-user" id="department" name="department">
+                                                    <option value="" selected disabled>Select your department</option>
+                                                    {% for department in departments %}
+                                                        <option value="{{ department.id }}" {% if form.department.data == department.id %}selected{% endif %}>{{ department.name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                {% if form.department.errors %}
+                                                    <div class="invalid-feedback d-block">
+                                                        {% for error in form.department.errors %}
+                                                            {{ error }}
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-sm-6 mb-3 mb-sm-0">
+                                            <input type="password" class="form-control form-control-user" 
+                                                id="password" name="password" placeholder="Password" required>
+                                            {% if form.password.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in form.password.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <input type="password" class="form-control form-control-user" 
+                                                id="confirmPassword" name="confirm_password" placeholder="Confirm Password" required>
+                                            {% if form.confirm_password.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in form.confirm_password.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="password-requirements mb-3 small">
+                                        <p class="mb-1">Password must contain:</p>
+                                        <ul class="ps-3 mb-0">
+                                            <li id="length-check">At least 8 characters</li>
+                                            <li id="uppercase-check">At least one uppercase letter</li>
+                                            <li id="lowercase-check">At least one lowercase letter</li>
+                                            <li id="number-check">At least one number</li>
+                                            <li id="match-check">Passwords must match</li>
+                                        </ul>
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <div class="custom-control custom-checkbox small">
+                                            <input type="checkbox" class="custom-control-input" id="termsAgreement" name="terms_agreement" required>
+                                            <label class="custom-control-label" for="termsAgreement">
+                                                I agree to the <a href="{{ url_for('web.terms') }}" target="_blank">Terms of Service</a> and <a href="{{ url_for('web.privacy') }}" target="_blank">Privacy Policy</a>
+                                            </label>
+                                            {% if form.terms_agreement.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in form.terms_agreement.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <button type="submit" id="registerBtn" class="btn btn-primary btn-user btn-block" disabled>
+                                        Register Account
+                                    </button>
+                                </form>
+                                <hr>
+                                <div class="text-center">
+                                    <a class="small" href="{{ url_for('auth.forgot_password') }}">Forgot Password?</a>
+                                </div>
+                                <div class="text-center">
+                                    <a class="small" href="{{ url_for('auth.login') }}">Already have an account? Login!</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block head_extras %}
+<style>
+    .bg-register-image {
+        background: url("{{ url_for('static', filename='img/register-bg.jpg') }}");
+        background-position: center;
+        background-size: cover;
+    }
+    
+    .form-control-user {
+        font-size: 0.8rem;
+        border-radius: 10rem;
+        padding: 1.5rem 1rem;
+    }
+    
+    .btn-user {
+        font-size: 0.8rem;
+        border-radius: 10rem;
+        padding: 0.75rem 1rem;
+    }
+    
+    .form-select.form-control-user {
+        padding: 0.8rem 1rem;
+        height: calc(1.5em + 1.5rem + 2px);
+    }
+    
+    .password-requirements {
+        color: #6c757d;
+    }
+    
+    .password-requirements ul {
+        list-style-type: none;
+    }
+    
+    .password-requirements li::before {
+        content: '✕ ';
+        color: #e74a3b;
+    }
+    
+    .password-requirements li.valid::before {
+        content: '✓ ';
+        color: #1cc88a;
+    }
+    
+    .password-requirements li.valid {
+        color: #1cc88a;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const roleSelect = document.getElementById('role');
+        const studentFields = document.getElementById('studentFields');
+        const facultyFields = document.getElementById('facultyFields');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const termsCheckbox = document.getElementById('termsAgreement');
+        const registerBtn = document.getElementById('registerBtn');
+        
+        // Password validation requirements
+        const lengthCheck = document.getElementById('length-check');
+        const uppercaseCheck = document.getElementById('uppercase-check');
+        const lowercaseCheck = document.getElementById('lowercase-check');
+        const numberCheck = document.getElementById('number-check');
+        const matchCheck = document.getElementById('match-check');
+        
+        // Toggle role-specific fields
+        roleSelect.addEventListener('change', function() {
+            if (this.value === 'student') {
+                studentFields.style.display = 'block';
+                facultyFields.style.display = 'none';
+            } else if (this.value === 'faculty') {
+                studentFields.style.display = 'none';
+                facultyFields.style.display = 'block';
+            } else {
+                studentFields.style.display = 'none';
+                facultyFields.style.display = 'none';
+            }
+            
+            validateForm();
+        });
+        
+        // Password validation
+        function validatePassword() {
+            const password = passwordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+            
+            // Check length
+            if (password.length >= 8) {
+                lengthCheck.classList.add('valid');
+            } else {
+                lengthCheck.classList.remove('valid');
+            }
+            
+            // Check uppercase
+            if (/[A-Z]/.test(password)) {
+                uppercaseCheck.classList.add('valid');
+            } else {
+                uppercaseCheck.classList.remove('valid');
+            }
+            
+            // Check lowercase
+            if (/[a-z]/.test(password)) {
+                lowercaseCheck.classList.add('valid');
+            } else {
+                lowercaseCheck.classList.remove('valid');
+            }
+            
+            // Check number
+            if (/[0-9]/.test(password)) {
+                numberCheck.classList.add('valid');
+            } else {
+                numberCheck.classList.remove('valid');
+            }
+            
+            // Check passwords match
+            if (password && confirmPassword && password === confirmPassword) {
+                matchCheck.classList.add('valid');
+            } else {
+                matchCheck.classList.remove('valid');
+            }
+            
+            validateForm();
+        }
+        
+        // Validate entire form and enable/disable submit button
+        function validateForm() {
+            const passwordValid = 
+                lengthCheck.classList.contains('valid') && 
+                uppercaseCheck.classList.contains('valid') && 
+                lowercaseCheck.classList.contains('valid') && 
+                numberCheck.classList.contains('valid') && 
+                matchCheck.classList.contains('valid');
+            
+            // Check if role is selected
+            const roleValid = roleSelect.value !== '' && roleSelect.value !== null;
+            
+            // Check if terms are accepted
+            const termsValid = termsCheckbox.checked;
+            
+            if (passwordValid && roleValid && termsValid) {
+                registerBtn.disabled = false;
+            } else {
+                registerBtn.disabled = true;
+            }
+        }
+        
+        // Add event listeners
+        passwordInput.addEventListener('input', validatePassword);
+        confirmPasswordInput.addEventListener('input', validatePassword);
+        termsCheckbox.addEventListener('change', validateForm);
+        
+        // Form submission
+        document.querySelector('form.user').addEventListener('submit', function(event) {
+            // Additional validation can be added here if needed
+            if (registerBtn.disabled) {
+                event.preventDefault();
+            }
+        });
+        
+        // Initialize validation on page load
+        validatePassword();
+    });
+</script>
+{% endblock %}

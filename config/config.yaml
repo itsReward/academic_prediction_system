@@ -1,0 +1,204 @@
+# Academic Status and Dropout Prediction System Configuration
+
+# Application settings
+app:
+  name: Academic Prediction System
+  environment: development  # Options: development, testing, production
+  debug: true
+  secret_key: ${SECRET_KEY}  # Set from environment variable
+  allowed_hosts:
+    - localhost
+    - 127.0.0.1
+  cors_origins:
+    - http://localhost:3000
+    - http://127.0.0.1:3000
+
+# Database configurations
+database:
+  default:
+    engine: postgresql
+    name: ${DB_NAME}
+    user: ${DB_USER}
+    password: ${DB_PASSWORD}
+    host: ${DB_HOST}
+    port: ${DB_PORT}
+    options:
+      connect_timeout: 10
+      application_name: academic_prediction_system
+
+# Redis for caching and session management
+redis:
+  host: ${REDIS_HOST}
+  port: ${REDIS_PORT}
+  db: 0
+  password: ${REDIS_PASSWORD}
+
+# File storage configuration
+storage:
+  uploads_dir: data/uploads
+  models_dir: ml_models/trained_models
+  temp_dir: /tmp
+
+# Machine Learning model configurations
+ml:
+  default_model: random_forest_v1
+  model_registry: ml_models
+  hyperparameters:
+    random_forest:
+      n_estimators: 100
+      max_depth: 20
+      min_samples_split: 2
+      min_samples_leaf: 1
+    gradient_boosting:
+      n_estimators: 100
+      learning_rate: 0.1
+      max_depth: 3
+    logistic_regression:
+      C: 1.0
+      penalty: l2
+      solver: lbfgs
+  threshold:
+    dropout_risk: 0.7  # Threshold to classify as high dropout risk
+
+# Dataset configuration
+data:
+  raw_data_path: data/raw/dataset.csv
+  processed_data_path: data/processed
+  target_column: Target
+  feature_columns:
+    - Application mode
+    - Application order
+    - Course
+    - Daytime/evening attendance
+    - Previous qualification
+    - Nacionality
+    - Mother's qualification
+    - Father's qualification
+    - Mother's occupation
+    - Father's occupation
+    - Displaced
+    - Educational special needs
+    - Debtor
+    - Tuition fees up to date
+    - Gender
+    - Scholarship holder
+    - Age at enrollment
+    - International
+    - Curricular units 1st sem (credited)
+    - Curricular units 1st sem (enrolled)
+    - Curricular units 1st sem (evaluations)
+    - Curricular units 1st sem (approved)
+    - Curricular units 1st sem (grade)
+    - Curricular units 1st sem (without evaluations)
+    - Curricular units 2nd sem (credited)
+    - Curricular units 2nd sem (enrolled)
+    - Curricular units 2nd sem (evaluations)
+    - Curricular units 2nd sem (approved)
+    - Curricular units 2nd sem (grade)
+    - Curricular units 2nd sem (without evaluations)
+    - Unemployment rate
+    - Inflation rate
+    - GDP
+  categorical_features:
+    - Marital status
+    - Application mode
+    - Course
+    - Daytime/evening attendance
+    - Previous qualification
+    - Nacionality
+    - Mother's qualification
+    - Father's qualification
+    - Mother's occupation
+    - Father's occupation
+    - Displaced
+    - Educational special needs
+    - Debtor
+    - Tuition fees up to date
+    - Gender
+    - Scholarship holder
+    - International
+  numerical_features:
+    - Application order
+    - Age at enrollment
+    - Curricular units 1st sem (credited)
+    - Curricular units 1st sem (enrolled)
+    - Curricular units 1st sem (evaluations)
+    - Curricular units 1st sem (approved)
+    - Curricular units 1st sem (grade)
+    - Curricular units 1st sem (without evaluations)
+    - Curricular units 2nd sem (credited)
+    - Curricular units 2nd sem (enrolled)
+    - Curricular units 2nd sem (evaluations)
+    - Curricular units 2nd sem (approved)
+    - Curricular units 2nd sem (grade)
+    - Curricular units 2nd sem (without evaluations)
+    - Unemployment rate
+    - Inflation rate
+    - GDP
+  preprocessing:
+    scaling: standard  # Options: standard, minmax, robust
+    handle_missing: impute  # Options: impute, drop
+    categorical_encoding: onehot  # Options: onehot, label, binary
+
+# API settings
+api:
+  version: v1
+  prefix: /api/v1
+  rate_limit:
+    enabled: true
+    requests_per_minute: 60
+  documentation:
+    enabled: true
+    path: /api/docs
+
+# Web application settings
+web:
+  static_url: /static/
+  media_url: /media/
+  session_cookie_age: 86400  # 24 hours in seconds
+  pagination:
+    default_page_size: 20
+    max_page_size: 100
+
+# Security settings
+security:
+  password_hashers:
+    - pbkdf2_sha256
+  password_min_length: 8
+  jwt:
+    algorithm: HS256
+    access_token_expire_minutes: 30
+    refresh_token_expire_days: 7
+  csrf_protection: true
+  ssl_redirect: false  # Set to true in production
+
+# Email settings
+email:
+  backend: smtp
+  host: ${EMAIL_HOST}
+  port: ${EMAIL_PORT}
+  username: ${EMAIL_USERNAME}
+  password: ${EMAIL_PASSWORD}
+  use_tls: true
+  from_email: noreply@academicprediction.org
+
+# Notification settings
+notifications:
+  email:
+    enabled: true
+    high_risk_alert: true
+  dashboard:
+    enabled: true
+    refresh_interval: 300  # seconds
+
+# Logging settings (see also logging_config.ini)
+logging:
+  config_file: config/logging_config.ini
+  level: INFO
+
+# Monitoring and metrics
+monitoring:
+  enabled: true
+  endpoint: /metrics
+  performance_tracking: true
+  error_tracking: true

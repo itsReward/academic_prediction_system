@@ -1,0 +1,1195 @@
+{% extends "base.html" %}
+
+{% block title %}Faculty Dashboard - Academic Prediction System{% endblock %}
+
+{% block head_extras %}
+<!-- Additional CSS for this template -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+<!-- DataTables CSS -->
+<link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">Faculty Dashboard</h1>
+        <div>
+            <button class="btn btn-outline-secondary me-2" onclick="window.print()">
+                <i class="fas fa-print me-1"></i> Print Report
+            </button>
+            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#exportDataModal">
+                <i class="fas fa-file-export me-1"></i> Export Data
+            </button>
+        </div>
+    </div>
+
+    <!-- Overview Cards -->
+    <div class="row mb-4">
+        <!-- Students Monitored Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Students Monitored</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_students }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- At Risk Students Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                At-Risk Students</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.at_risk_students }}</div>
+                            <div class="text-xs text-muted mt-1">{{ stats.at_risk_percentage }}% of monitored students</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Average Performance Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Average Performance</div>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col-auto">
+                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">{{ stats.avg_performance }}</div>
+                                </div>
+                                <div class="col">
+                                    <div class="progress progress-sm mr-2">
+                                        <div class="progress-bar bg-info" role="progressbar"
+                                            style="width: {{ stats.avg_performance_percentage }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Course Completion Rate Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Course Completion Rate</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.completion_rate }}%</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-graduation-cap fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row: At-Risk Students and Comparison Charts -->
+    <div class="row mb-4">
+        <!-- At-Risk Students Table -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">At-Risk Students Requiring Attention</h6>
+                    <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+                            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                            aria-labelledby="dropdownMenuLink">
+                            <div class="dropdown-header">Actions:</div>
+                            <a class="dropdown-item" href="#">Contact All</a>
+                            <a class="dropdown-item" href="#">Export List</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="#">View All Students</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="atRiskTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Student ID</th>
+                                    <th>Name</th>
+                                    <th>Course</th>
+                                    <th>Risk Level</th>
+                                    <th>Performance</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student in at_risk_students %}
+                                <tr>
+                                    <td><a href="{{ url_for('web.student_detail', id=student.id) }}">{{ student.id }}</a></td>
+                                    <td>{{ student.name }}</td>
+                                    <td>{{ student.course }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ student.risk_color }}">{{ student.risk_level }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 15px;">
+                                            <div class="progress-bar bg-{{ student.performance_color }}" role="progressbar" 
+                                                style="width: {{ student.performance_percentage }}%" 
+                                                aria-valuenow="{{ student.performance_percentage }}" aria-valuemin="0" 
+                                                aria-valuemax="100">{{ student.performance_percentage }}%</div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{{ url_for('web.student_detail', id=student.id) }}" class="btn btn-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-success" data-bs-toggle="modal" 
+                                                data-bs-target="#contactModal" data-student-id="{{ student.id }}" 
+                                                data-student-name="{{ student.name }}">
+                                                <i class="fas fa-envelope"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-info" data-bs-toggle="modal" 
+                                                data-bs-target="#interventionModal" data-student-id="{{ student.id }}" 
+                                                data-student-name="{{ student.name }}">
+                                                <i class="fas fa-hands-helping"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Distribution Chart -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Risk Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie mb-4">
+                        <canvas id="riskDistributionChart"></canvas>
+                    </div>
+                    <hr>
+                    <div class="text-center small">
+                        <span class="me-2"><i class="fas fa-circle text-success"></i> Low Risk</span>
+                        <span class="me-2"><i class="fas fa-circle text-warning"></i> Medium Risk</span>
+                        <span><i class="fas fa-circle text-danger"></i> High Risk</span>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mt-4">
+                        <h6 class="font-weight-bold">Risk Factors Overview</h6>
+                        <ul class="list-group list-group-flush mt-3">
+                            {% for factor in risk_factors %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                {{ factor.name }}
+                                <span class="badge bg-{{ factor.color }} rounded-pill">{{ factor.count }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Performance Comparison -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Course Performance Comparison</h6>
+            <div class="dropdown no-arrow">
+                <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                    aria-labelledby="dropdownMenuLink">
+                    <div class="dropdown-header">View Options:</div>
+                    <a class="dropdown-item" href="#" onclick="toggleComparisonView('grades')">Grades</a>
+                    <a class="dropdown-item" href="#" onclick="toggleComparisonView('completion')">Completion Rates</a>
+                    <a class="dropdown-item" href="#" onclick="toggleComparisonView('risk')">Risk Distribution</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#" onclick="downloadChartAsImage('courseComparisonChart')">Export Chart</a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="chart-bar">
+                <canvas id="courseComparisonChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row: Recent Interventions and Performance Trends -->
+    <div class="row mb-4">
+        <!-- Recent Interventions -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Interventions</h6>
+                </div>
+                <div class="card-body">
+                    {% if recent_interventions %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Student</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Follow-up</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for intervention in recent_interventions %}
+                                <tr>
+                                    <td>{{ intervention.date }}</td>
+                                    <td><a href="{{ url_for('web.student_detail', id=intervention.student_id) }}">{{ intervention.student_name }}</a></td>
+                                    <td>{{ intervention.type }}</td>
+                                    <td><span class="badge bg-{{ intervention.status_color }}">{{ intervention.status }}</span></td>
+                                    <td>
+                                        {% if intervention.follow_up_date %}
+                                        {{ intervention.follow_up_date }}
+                                        {% else %}
+                                        <button class="btn btn-sm btn-outline-primary">Schedule</button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('web.interventions') }}" class="btn btn-sm btn-primary">View All Interventions</a>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-clipboard-check fa-3x text-success mb-3"></i>
+                        <p class="lead">No recent interventions</p>
+                        <p class="text-muted">Start an intervention by visiting a student's profile or using the action buttons in the At-Risk Students table.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Trends -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Performance Trends</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="performanceTrendsChart"></canvas>
+                    </div>
+                    <hr>
+                    <div class="text-center small">
+                        <span class="me-2"><i class="fas fa-circle text-primary"></i> Average Grade</span>
+                        <span class="me-2"><i class="fas fa-circle text-success"></i> Completion Rate</span>
+                        <span><i class="fas fa-circle text-danger"></i> At-Risk Percentage</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Management Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Course Management</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="coursesTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Course ID</th>
+                            <th>Course Name</th>
+                            <th>Students</th>
+                            <th>At-Risk Students</th>
+                            <th>Average Grade</th>
+                            <th>Completion Rate</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for course in courses %}
+                        <tr>
+                            <td>{{ course.id }}</td>
+                            <td>{{ course.name }}</td>
+                            <td>{{ course.students_count }}</td>
+                            <td>
+                                <span class="badge bg-{{ course.risk_color }}">{{ course.at_risk_count }}</span>
+                                ({{ course.at_risk_percentage }}%)
+                            </td>
+                            <td>{{ course.avg_grade }}</td>
+                            <td>
+                                <div class="progress" style="height: 15px;">
+                                    <div class="progress-bar bg-{{ course.completion_color }}" role="progressbar" 
+                                        style="width: {{ course.completion_rate }}%" 
+                                        aria-valuenow="{{ course.completion_rate }}" aria-valuemin="0" 
+                                        aria-valuemax="100">{{ course.completion_rate }}%</div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{{ url_for('web.course_detail', id=course.id) }}" class="btn btn-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-info" data-bs-toggle="modal" 
+                                        data-bs-target="#courseAnalyticsModal" data-course-id="{{ course.id }}" 
+                                        data-course-name="{{ course.name }}">
+                                        <i class="fas fa-chart-line"></i>
+                                    </button>
+                                    <a href="{{ url_for('web.course_students', id=course.id) }}" class="btn btn-success">
+                                        <i class="fas fa-users"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contact Student Modal -->
+<div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="contactModalLabel">Contact Student</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="contactForm">
+                    <input type="hidden" id="contactStudentId" name="studentId">
+                    <div class="mb-3">
+                        <label for="contactStudentName" class="form-label">Student</label>
+                        <input type="text" class="form-control" id="contactStudentName" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="contactSubject" class="form-label">Subject</label>
+                        <input type="text" class="form-control" id="contactSubject" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="contactMethod" class="form-label">Contact Method</label>
+                        <select class="form-select" id="contactMethod" required>
+                            <option value="email">Email</option>
+                            <option value="sms">SMS</option>
+                            <option value="phone">Phone Call</option>
+                            <option value="meeting">Schedule Meeting</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="contactMessage" class="form-label">Message</label>
+                        <textarea class="form-control" id="contactMessage" rows="4" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="sendContactBtn">Send Message</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Intervention Modal -->
+<div class="modal fade" id="interventionModal" tabindex="-1" aria-labelledby="interventionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="interventionModalLabel">Create Intervention Plan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="interventionForm">
+                    <input type="hidden" id="interventionStudentId" name="studentId">
+                    <div class="mb-3">
+                        <label for="interventionStudentName" class="form-label">Student</label>
+                        <input type="text" class="form-control" id="interventionStudentName" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="interventionType" class="form-label">Intervention Type</label>
+                        <select class="form-select" id="interventionType" required>
+                            <option value="">Select intervention type</option>
+                            <option value="academic_support">Academic Support</option>
+                            <option value="counseling">Counseling</option>
+                            <option value="financial_aid">Financial Aid</option>
+                            <option value="study_skills">Study Skills Development</option>
+                            <option value="mentoring">Mentoring Program</option>
+                            <option value="custom">Custom Intervention</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="interventionDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="interventionDescription" rows="3" required></textarea>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="interventionStartDate" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="interventionStartDate" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="interventionEndDate" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="interventionEndDate">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="interventionResources" class="form-label">Resources Required</label>
+                        <textarea class="form-control" id="interventionResources" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="interventionFollowUp" class="form-label">Follow-up Date</label>
+                        <input type="date" class="form-control" id="interventionFollowUp" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="interventionOutcomes" class="form-label">Expected Outcomes</label>
+                        <textarea class="form-control" id="interventionOutcomes" rows="2" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveInterventionBtn">Create Intervention</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Course Analytics Modal -->
+<div class="modal fade" id="courseAnalyticsModal" tabindex="-1" aria-labelledby="courseAnalyticsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="courseAnalyticsModalLabel">Course Analytics</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="analyticsCourseId">
+                <h4 id="analyticsCourseTitle" class="mb-4">Course Analysis</h4>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="m-0 font-weight-bold text-primary">Performance Distribution</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="modalPerformanceChart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="m-0 font-weight-bold text-primary">Completion Statistics</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="modalCompletionChart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold text-primary">Risk Factor Distribution</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="modalRiskFactorsChart" height="100"></canvas>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="m-0 font-weight-bold text-primary">Recommended Actions</h6>
+                                <button class="btn btn-sm btn-outline-primary" id="implementAllBtn">Implement All</button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Recommendation</th>
+                                                <th>Target Group</th>
+                                                <th>Impact</th>
+                                                <th>Effort</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="recommendationsTableBody">
+                                            <!-- Will be populated by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" id="exportAnalyticsBtn">Export Analytics</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Data Modal -->
+<div class="modal fade" id="exportDataModal" tabindex="-1" aria-labelledby="exportDataModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exportDataModalLabel">Export Data</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="exportForm">
+                    <div class="mb-3">
+                        <label for="exportDataType" class="form-label">Data to Export</label>
+                        <select class="form-select" id="exportDataType" required>
+                            <option value="at-risk-students">At-Risk Students</option>
+                            <option value="all-students">All Students</option>
+                            <option value="course-performance">Course Performance Data</option>
+                            <option value="interventions">Intervention Records</option>
+                            <option value="analytics">Complete Analytics Report</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="exportFormat" class="form-label">Format</label>
+                        <select class="form-select" id="exportFormat" required>
+                            <option value="csv">CSV</option>
+                            <option value="excel">Excel</option>
+                            <option value="pdf">PDF Report</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="exportTimeRange" class="form-label">Time Range</label>
+                        <select class="form-select" id="exportTimeRange" required>
+                            <option value="current">Current Semester</option>
+                            <option value="year">Academic Year</option>
+                            <option value="all">All Available Data</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                    <div class="row mb-3" id="customDateRange" style="display: none;">
+                        <div class="col-md-6">
+                            <label for="exportStartDate" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="exportStartDate">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="exportEndDate" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="exportEndDate">
+                        </div>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="includeAnalysis">
+                        <label class="form-check-label" for="includeAnalysis">Include Analysis & Recommendations</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="exportDataBtn">Export Data</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+    // Initialize DataTables
+    $(document).ready(function() {
+        $('#atRiskTable').DataTable({
+            order: [[3, 'desc']] // Order by risk level descending
+        });
+        
+        $('#coursesTable').DataTable({
+            order: [[3, 'desc']] // Order by at-risk students descending
+        });
+        
+        // Show/hide custom date range based on time range selection
+        $('#exportTimeRange').change(function() {
+            if ($(this).val() === 'custom') {
+                $('#customDateRange').show();
+            } else {
+                $('#customDateRange').hide();
+            }
+        });
+    });
+
+    // Risk Distribution Chart
+    var ctx1 = document.getElementById("riskDistributionChart");
+    var riskDistributionChart = new Chart(ctx1, {
+        type: 'doughnut',
+        data: {
+            labels: ["Low Risk", "Medium Risk", "High Risk"],
+            datasets: [{
+                data: [{{ stats.low_risk_count }}, {{ stats.medium_risk_count }}, {{ stats.high_risk_count }}],
+                backgroundColor: ['#1cc88a', '#f6c23e', '#e74a3b'],
+                hoverBackgroundColor: ['#17a673', '#e3b12d', '#d32f2f'],
+                hoverBorderColor: "rgba(234, 236, 244, 1)",
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: "rgb(255,255,255)",
+                    bodyColor: "#858796",
+                    borderColor: '#dddfeb',
+                    borderWidth: 1,
+                    displayColors: false
+                }
+            },
+            cutout: '70%',
+        },
+    });
+
+    // Course Comparison Chart
+    var ctx2 = document.getElementById("courseComparisonChart");
+    var courseComparisonChart = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: {{ course_names|safe }},
+            datasets: [{
+                label: "Average Grade",
+                backgroundColor: "#4e73df",
+                hoverBackgroundColor: "#2e59d9",
+                borderColor: "#4e73df",
+                data: {{ course_grades|safe }},
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    left: 10,
+                    right: 25,
+                    top: 25,
+                    bottom: 0
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    }
+                },
+                y: {
+                    ticks: {
+                        min: 0,
+                        max: 20,
+                        maxTicksLimit: 5,
+                        padding: 10
+                    },
+                    grid: {
+                        color: "rgb(234, 236, 244)",
+                        zeroLineColor: "rgb(234, 236, 244)",
+                        drawBorder: false,
+                        borderDash: [2],
+                        zeroLineBorderDash: [2]
+                    }
+                },
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: "rgb(255,255,255)",
+                    bodyColor: "#858796",
+                    titleMarginBottom: 10,
+                    titleColor: '#6e707e',
+                    titleFont: {
+                        size: 14
+                    },
+                    borderColor: '#dddfeb',
+                    borderWidth: 1,
+                    xPadding: 15,
+                    yPadding: 15,
+                    displayColors: false,
+                    caretPadding: 10
+                }
+            }
+        }
+    });
+
+    // Performance Trends Chart
+    var ctx3 = document.getElementById("performanceTrendsChart");
+    var performanceTrendsChart = new Chart(ctx3, {
+        type: 'line',
+        data: {
+            labels: {{ trend_months|safe }},
+            datasets: [{
+                label: "Average Grade",
+                lineTension: 0.3,
+                backgroundColor: "rgba(78, 115, 223, 0.05)",
+                borderColor: "rgba(78, 115, 223, 1)",
+                pointRadius: 3,
+                pointBackgroundColor: "rgba(78, 115, 223, 1)",
+                pointBorderColor: "rgba(78, 115, 223, 1)",
+                pointHoverRadius: 3,
+                pointHoverBackgroundColor: "rgba(78, 115, 223, 1)",
+                pointHoverBorderColor: "rgba(78, 115, 223, 1)",
+                pointHitRadius: 10,
+                pointBorderWidth: 2,
+                data: {{ trend_grades|safe }},
+            },
+            {
+                label: "Completion Rate",
+                lineTension: 0.3,
+                backgroundColor: "rgba(28, 200, 138, 0.05)",
+                borderColor: "rgba(28, 200, 138, 1)",
+                pointRadius: 3,
+                pointBackgroundColor: "rgba(28, 200, 138, 1)",
+                pointBorderColor: "rgba(28, 200, 138, 1)",
+                pointHoverRadius: 3,
+                pointHoverBackgroundColor: "rgba(28, 200, 138, 1)",
+                pointHoverBorderColor: "rgba(28, 200, 138, 1)",
+                pointHitRadius: 10,
+                pointBorderWidth: 2,
+                data: {{ trend_completion|safe }},
+            },
+            {
+                label: "At-Risk Percentage",
+                lineTension: 0.3,
+                backgroundColor: "rgba(231, 74, 59, 0.05)",
+                borderColor: "rgba(231, 74, 59, 1)",
+                pointRadius: 3,
+                pointBackgroundColor: "rgba(231, 74, 59, 1)",
+                pointBorderColor: "rgba(231, 74, 59, 1)",
+                pointHoverRadius: 3,
+                pointHoverBackgroundColor: "rgba(231, 74, 59, 1)",
+                pointHoverBorderColor: "rgba(231, 74, 59, 1)",
+                pointHitRadius: 10,
+                pointBorderWidth: 2,
+                data: {{ trend_risk|safe }},
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    left: 10,
+                    right: 25,
+                    top: 25,
+                    bottom: 0
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        maxTicksLimit: 7
+                    }
+                },
+                y: {
+                    ticks: {
+                        maxTicksLimit: 5,
+                        padding: 10
+                    },
+                    grid: {
+                        color: "rgb(234, 236, 244)",
+                        zeroLineColor: "rgb(234, 236, 244)",
+                        drawBorder: false,
+                        borderDash: [2],
+                        zeroLineBorderDash: [2]
+                    }
+                },
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    backgroundColor: "rgb(255,255,255)",
+                    bodyColor: "#858796",
+                    titleMarginBottom: 10,
+                    titleColor: '#6e707e',
+                    titleFont: {
+                        size: 14
+                    },
+                    borderColor: '#dddfeb',
+                    borderWidth: 1,
+                    xPadding: 15,
+                    yPadding: 15,
+                    displayColors: false,
+                    caretPadding: 10
+                }
+            }
+        }
+    });
+
+    // Toggle between different chart views for course comparison
+    function toggleComparisonView(view) {
+        let labels = courseComparisonChart.data.labels;
+        let dataset = courseComparisonChart.data.datasets[0];
+        
+        if (view === 'grades') {
+            dataset.label = "Average Grade";
+            dataset.data = {{ course_grades|safe }};
+            dataset.backgroundColor = "#4e73df";
+            dataset.hoverBackgroundColor = "#2e59d9";
+            dataset.borderColor = "#4e73df";
+            courseComparisonChart.options.scales.y.ticks.max = 20;
+        } else if (view === 'completion') {
+            dataset.label = "Completion Rate (%)";
+            dataset.data = {{ course_completion|safe }};
+            dataset.backgroundColor = "#1cc88a";
+            dataset.hoverBackgroundColor = "#17a673";
+            dataset.borderColor = "#1cc88a";
+            courseComparisonChart.options.scales.y.ticks.max = 100;
+        } else if (view === 'risk') {
+            dataset.label = "At-Risk Students (%)";
+            dataset.data = {{ course_risk|safe }};
+            dataset.backgroundColor = "#e74a3b";
+            dataset.hoverBackgroundColor = "#d32f2f";
+            dataset.borderColor = "#e74a3b";
+            courseComparisonChart.options.scales.y.ticks.max = 100;
+        }
+        
+        courseComparisonChart.update();
+    }
+
+    // Function to download chart as image
+    function downloadChartAsImage(chartId) {
+        const canvas = document.getElementById(chartId);
+        const image = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = chartId + '.png';
+        link.href = image;
+        link.click();
+    }
+
+    // Contact Modal Event Handler
+    $('#contactModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var studentId = button.data('student-id');
+        var studentName = button.data('student-name');
+        var modal = $(this);
+        
+        modal.find('#contactStudentId').val(studentId);
+        modal.find('#contactStudentName').val(studentName);
+    });
+
+    $('#sendContactBtn').on('click', function() {
+        // Validate form
+        var form = document.getElementById('contactForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        
+        // Show loader
+        $(this).html('<span class="spinner-border spinner-border-sm"></span> Sending...');
+        
+        // Simulate sending message
+        setTimeout(() => {
+            // Close modal
+            $('#contactModal').modal('hide');
+            
+            // Show success toast
+            const toast = new bootstrap.Toast(document.getElementById('liveToast'));
+            document.getElementById('toastTitle').innerHTML = 'Message Sent';
+            document.getElementById('toastMessage').innerHTML = 'Your message has been sent successfully.';
+            document.getElementById('toastTime').innerHTML = 'Just now';
+            toast.show();
+            
+            // Reset button
+            $(this).html('Send Message');
+            
+            // Reset form
+            form.reset();
+        }, 1500);
+    });
+
+    // Intervention Modal Event Handler
+    $('#interventionModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var studentId = button.data('student-id');
+        var studentName = button.data('student-name');
+        var modal = $(this);
+        
+        modal.find('#interventionStudentId').val(studentId);
+        modal.find('#interventionStudentName').val(studentName);
+    });
+
+    $('#saveInterventionBtn').on('click', function() {
+        // Validate form
+        var form = document.getElementById('interventionForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        
+        // Show loader
+        $(this).html('<span class="spinner-border spinner-border-sm"></span> Creating...');
+        
+        // Simulate creating intervention
+        setTimeout(() => {
+            // Close modal
+            $('#interventionModal').modal('hide');
+            
+            // Show success toast
+            const toast = new bootstrap.Toast(document.getElementById('liveToast'));
+            document.getElementById('toastTitle').innerHTML = 'Intervention Created';
+            document.getElementById('toastMessage').innerHTML = 'The intervention plan has been created successfully.';
+            document.getElementById('toastTime').innerHTML = 'Just now';
+            toast.show();
+            
+            // Reset button
+            $(this).html('Create Intervention');
+            
+            // Reset form
+            form.reset();
+        }, 1500);
+    });
+
+    // Course Analytics Modal Event Handler
+    $('#courseAnalyticsModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var courseId = button.data('course-id');
+        var courseName = button.data('course-name');
+        var modal = $(this);
+        
+        modal.find('#analyticsCourseId').val(courseId);
+        modal.find('#analyticsCourseTitle').text('Course Analysis: ' + courseName);
+        
+        // Create sample charts for the modal
+        createModalCharts(courseId);
+        
+        // Populate recommendations table
+        populateRecommendations(courseId);
+    });
+
+    // Create sample charts for the course analytics modal
+    function createModalCharts(courseId) {
+        // Performance Distribution Chart
+        if (window.modalPerformanceChart) window.modalPerformanceChart.destroy();
+        var ctx4 = document.getElementById("modalPerformanceChart");
+        window.modalPerformanceChart = new Chart(ctx4, {
+            type: 'bar',
+            data: {
+                labels: ["<60", "60-70", "70-80", "80-90", "90-100"],
+                datasets: [{
+                    label: "Number of Students",
+                    backgroundColor: ["#e74a3b", "#f6c23e", "#36b9cc", "#1cc88a", "#4e73df"],
+                    data: [4, 8, 15, 12, 6],
+                }],
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Completion Statistics Chart
+        if (window.modalCompletionChart) window.modalCompletionChart.destroy();
+        var ctx5 = document.getElementById("modalCompletionChart");
+        window.modalCompletionChart = new Chart(ctx5, {
+            type: 'pie',
+            data: {
+                labels: ["Completed", "In Progress", "At Risk", "Dropped"],
+                datasets: [{
+                    backgroundColor: ["#1cc88a", "#36b9cc", "#f6c23e", "#e74a3b"],
+                    data: [35, 20, 10, 5],
+                }],
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+        
+        // Risk Factors Chart
+        if (window.modalRiskFactorsChart) window.modalRiskFactorsChart.destroy();
+        var ctx6 = document.getElementById("modalRiskFactorsChart");
+        window.modalRiskFactorsChart = new Chart(ctx6, {
+            type: 'horizontalBar',
+            data: {
+                labels: ["Low Engagement", "Missing Assignments", "Poor Attendance", "Low Grades", "Financial Issues"],
+                datasets: [{
+                    label: "Impact Score",
+                    backgroundColor: ["#4e73df", "#1cc88a", "#36b9cc", "#f6c23e", "#e74a3b"],
+                    data: [65, 45, 75, 55, 40],
+                }],
+            },
+            options: {
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    }
+
+    // Populate recommendations table in modal
+    function populateRecommendations(courseId) {
+        // Sample recommendations data
+        const recommendations = [
+            {
+                recommendation: "Additional review sessions for difficult topics",
+                target: "Students scoring below 70%",
+                impact: "High",
+                effort: "Medium",
+                id: 1
+            },
+            {
+                recommendation: "Personalized email outreach to at-risk students",
+                target: "High risk students",
+                impact: "Medium",
+                effort: "Low",
+                id: 2
+            },
+            {
+                recommendation: "Implement peer tutoring program",
+                target: "All students",
+                impact: "High",
+                effort: "High",
+                id: 3
+            },
+            {
+                recommendation: "Revise assignment deadlines",
+                target: "Students with work commitments",
+                impact: "Medium",
+                effort: "Low",
+                id: 4
+            }
+        ];
+        
+        const tbody = document.getElementById('recommendationsTableBody');
+        tbody.innerHTML = '';
+        
+        recommendations.forEach(rec => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${rec.recommendation}</td>
+                <td>${rec.target}</td>
+                <td><span class="badge bg-${rec.impact === 'High' ? 'success' : 'warning'}">${rec.impact}</span></td>
+                <td><span class="badge bg-${rec.effort === 'Low' ? 'success' : rec.effort === 'Medium' ? 'warning' : 'danger'}">${rec.effort}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-success implementBtn" data-id="${rec.id}">Implement</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+        
+        // Add event listeners to implement buttons
+        document.querySelectorAll('.implementBtn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                
+                // Simulate implementation
+                setTimeout(() => {
+                    this.innerHTML = '<i class="fas fa-check"></i> Implemented';
+                    this.classList.remove('btn-outline-success');
+                    this.classList.add('btn-success');
+                    this.disabled = true;
+                }, 1000);
+            });
+        });
+    }
+
+    // Export Data Button Event Handler
+    $('#exportDataBtn').on('click', function() {
+        // Validate form
+        var form = document.getElementById('exportForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        
+        // Show loader
+        $(this).html('<span class="spinner-border spinner-border-sm"></span> Exporting...');
+        
+        // Simulate exporting data
+        setTimeout(() => {
+            // Close modal
+            $('#exportDataModal').modal('hide');
+            
+            // Show success toast
+            const toast = new bootstrap.Toast(document.getElementById('liveToast'));
+            document.getElementById('toastTitle').innerHTML = 'Data Exported';
+            document.getElementById('toastMessage').innerHTML = 'Your data has been exported successfully.';
+            document.getElementById('toastTime').innerHTML = 'Just now';
+            toast.show();
+            
+            // Reset button
+            $(this).html('Export Data');
+            
+            // Reset form
+            form.reset();
+            
+            // Hide custom date range
+            $('#customDateRange').hide();
+        }, 1500);
+    });
+</script>
+{% endblock %}

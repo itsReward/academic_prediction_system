@@ -1,0 +1,768 @@
+{% extends "base.html" %}
+
+{% block title %}My Academic Status - Academic Prediction System{% endblock %}
+
+{% block head_extras %}
+<!-- Additional CSS for this template -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">My Academic Status</h1>
+        <div>
+            <button class="btn btn-outline-secondary" onclick="window.print()">
+                <i class="fas fa-print me-1"></i> Print Report
+            </button>
+            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#updateDataModal">
+                <i class="fas fa-sync-alt me-1"></i> Update Data
+            </button>
+        </div>
+    </div>
+
+    <!-- Status Overview Cards -->
+    <div class="row mb-4">
+        <!-- Academic Status Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-{{ status_color }} shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-{{ status_color }} text-uppercase mb-1">
+                                Academic Status</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ student.status }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-graduation-cap fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dropout Risk Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-{{ risk_color }} shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-{{ risk_color }} text-uppercase mb-1">
+                                Dropout Risk</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ student.risk_level }}</div>
+                            <div class="text-xs text-muted mt-1">{{ student.risk_percentage }}% likelihood</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overall GPA Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Overall Performance</div>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col-auto">
+                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">{{ student.overall_grade }}</div>
+                                </div>
+                                <div class="col">
+                                    <div class="progress progress-sm mr-2">
+                                        <div class="progress-bar bg-info" role="progressbar"
+                                            style="width: {{ student.overall_percentage }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance Rate Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Engagement Score</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ student.engagement_score }}/100</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row: Risk Factors and Improvements -->
+    <div class="row mb-4">
+        <!-- Risk Factors -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Risk Factors</h6>
+                    <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+                            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                            aria-labelledby="dropdownMenuLink">
+                            <div class="dropdown-header">Actions:</div>
+                            <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#riskFactorsModal">Details</a>
+                            <a class="dropdown-item" href="#">Download PDF</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if risk_factors %}
+                    <div class="table-responsive">
+                        <table class="table table-borderless">
+                            <thead>
+                                <tr>
+                                    <th>Factor</th>
+                                    <th>Impact</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for factor in risk_factors %}
+                                <tr>
+                                    <td>{{ factor.name }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 15px;">
+                                            <div class="progress-bar bg-{{ factor.color }}" role="progressbar" style="width: {{ factor.impact }}%"
+                                                aria-valuenow="{{ factor.impact }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-{{ factor.color }}">{{ factor.status }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <p class="lead">No significant risk factors identified!</p>
+                        <p class="text-muted">Keep up the good work and maintain your current academic performance.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Areas for Improvement -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recommended Improvements</h6>
+                </div>
+                <div class="card-body">
+                    {% if improvements %}
+                    <ul class="list-group list-group-flush">
+                        {% for improvement in improvements %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ improvement.title }}</h6>
+                                <p class="mb-0 text-muted">{{ improvement.description }}</p>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">{{ improvement.impact }}% impact</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-star fa-3x text-warning mb-3"></i>
+                        <p class="lead">Looking great!</p>
+                        <p class="text-muted">You're performing well across all areas. To excel further, consider engaging with extracurricular activities or advanced studies.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Trends -->
+    <div class="row mb-4">
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Academic Performance Trends</h6>
+                    <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+                            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                            aria-labelledby="dropdownMenuLink">
+                            <div class="dropdown-header">View Options:</div>
+                            <a class="dropdown-item" href="#" onclick="toggleChartView('grades')">Grades</a>
+                            <a class="dropdown-item" href="#" onclick="toggleChartView('units')">Completed Units</a>
+                            <a class="dropdown-item" href="#" onclick="toggleChartView('risk')">Risk Scores</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="#" onclick="downloadChartAsPNG()">Export Chart</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="performanceTrendChart"></canvas>
+                    </div>
+                    <hr>
+                    <div class="text-center small">
+                        <span class="me-2">
+                            <i class="fas fa-circle text-primary"></i> 1st Semester
+                        </span>
+                        <span class="me-2">
+                            <i class="fas fa-circle text-success"></i> 2nd Semester
+                        </span>
+                        <span>
+                            <i class="fas fa-circle text-info"></i> Overall
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Performance Comparison</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie mb-4">
+                        <canvas id="performanceComparisonChart"></canvas>
+                    </div>
+                    <hr>
+                    <div class="text-center small">
+                        <span class="me-2">
+                            <i class="fas fa-circle text-primary"></i> Your Performance
+                        </span>
+                        <span>
+                            <i class="fas fa-circle text-secondary"></i> Class Average
+                        </span>
+                    </div>
+                    <hr>
+                    <div class="text-center">
+                        <p class="mb-0">Your performance is <strong class="text-{{ comparison_color }}">{{ performance_comparison }}%</strong> compared to class average</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Academic Records -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Academic Record Details</h6>
+        </div>
+        <div class="card-body">
+            <ul class="nav nav-tabs" id="academicRecordTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="semester1-tab" data-bs-toggle="tab" data-bs-target="#semester1" type="button" role="tab" aria-controls="semester1" aria-selected="true">1st Semester</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="semester2-tab" data-bs-toggle="tab" data-bs-target="#semester2" type="button" role="tab" aria-controls="semester2" aria-selected="false">2nd Semester</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="overall-tab" data-bs-toggle="tab" data-bs-target="#overall" type="button" role="tab" aria-controls="overall" aria-selected="false">Overall Summary</button>
+                </li>
+            </ul>
+            <div class="tab-content" id="academicRecordTabContent">
+                <!-- First Semester Tab -->
+                <div class="tab-pane fade show active" id="semester1" role="tabpanel" aria-labelledby="semester1-tab">
+                    <div class="table-responsive mt-3">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>Value</th>
+                                    <th>Analysis</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Units Credited</td>
+                                    <td>{{ academic_record.sem1_credited }}</td>
+                                    <td>{{ academic_record.sem1_credited_analysis }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Units Enrolled</td>
+                                    <td>{{ academic_record.sem1_enrolled }}</td>
+                                    <td>{{ academic_record.sem1_enrolled_analysis }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Evaluations</td>
+                                    <td>{{ academic_record.sem1_evaluations }}</td>
+                                    <td>{{ academic_record.sem1_evaluations_analysis }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Units Approved</td>
+                                    <td>{{ academic_record.sem1_approved }}</td>
+                                    <td>{{ academic_record.sem1_approved_analysis }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Grade</td>
+                                    <td>{{ academic_record.sem1_grade }}</td>
+                                    <td>{{ academic_record.sem1_grade_analysis }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Units Without Evaluations</td>
+                                    <td>{{ academic_record.sem1_without_evaluations }}</td>
+                                    <td>{{ academic_record.sem1_without_evaluations_analysis }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Second Semester Tab -->
+                <div class="tab-pane fade" id="semester2" role="tabpanel" aria-labelledby="semester2-tab">
+                    <div class="table-responsive mt-3">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>Value</th>
+                                    <th>Analysis</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Units Credited</td>
+                                    <td>{{ academic_record.sem2_credited }}</td>
+                                    <td>{{ academic_record.sem2_credited_analysis }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Units Enrolled</td>
+                                    <td>{{ academic_record.sem2_enrolled }}</td>
+                                    <td>{{ academic_record.sem2_enrolled_analysis }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Evaluations</td>
+                                    <td>{{ academic_record.sem2_evaluations }}</td>
+                                    <td>{{ academic_record.sem2_evaluations_analysis }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Units Approved</td>
+                                    <td>{{ academic_record.sem2_approved }}</td>
+                                    <td>{{ academic_record.sem2_approved_analysis }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Grade</td>
+                                    <td>{{ academic_record.sem2_grade }}</td>
+                                    <td>{{ academic_record.sem2_grade_analysis }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Units Without Evaluations</td>
+                                    <td>{{ academic_record.sem2_without_evaluations }}</td>
+                                    <td>{{ academic_record.sem2_without_evaluations_analysis }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Overall Summary Tab -->
+                <div class="tab-pane fade" id="overall" role="tabpanel" aria-labelledby="overall-tab">
+                    <div class="row mt-3">
+                        <div class="col-md-8">
+                            <h5>Key Performance Indicators</h5>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Metric</th>
+                                            <th>Value</th>
+                                            <th>Trend</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Overall Success Rate</td>
+                                            <td>{{ academic_record.overall_success_rate }}%</td>
+                                            <td>
+                                                {% if academic_record.success_rate_trend > 0 %}
+                                                <i class="fas fa-arrow-up text-success"></i> Improving
+                                                {% elif academic_record.success_rate_trend < 0 %}
+                                                <i class="fas fa-arrow-down text-danger"></i> Declining
+                                                {% else %}
+                                                <i class="fas fa-equals text-warning"></i> Stable
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Grade Point Average</td>
+                                            <td>{{ academic_record.overall_grade }}</td>
+                                            <td>
+                                                {% if academic_record.grade_trend > 0 %}
+                                                <i class="fas fa-arrow-up text-success"></i> Improving
+                                                {% elif academic_record.grade_trend < 0 %}
+                                                <i class="fas fa-arrow-down text-danger"></i> Declining
+                                                {% else %}
+                                                <i class="fas fa-equals text-warning"></i> Stable
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Engagement Score</td>
+                                            <td>{{ academic_record.engagement_score }}/100</td>
+                                            <td>
+                                                {% if academic_record.engagement_trend > 0 %}
+                                                <i class="fas fa-arrow-up text-success"></i> Improving
+                                                {% elif academic_record.engagement_trend < 0 %}
+                                                <i class="fas fa-arrow-down text-danger"></i> Declining
+                                                {% else %}
+                                                <i class="fas fa-equals text-warning"></i> Stable
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Dropout Risk</td>
+                                            <td>{{ academic_record.dropout_risk }}%</td>
+                                            <td>
+                                                {% if academic_record.risk_trend > 0 %}
+                                                <i class="fas fa-arrow-up text-danger"></i> Increasing
+                                                {% elif academic_record.risk_trend < 0 %}
+                                                <i class="fas fa-arrow-down text-success"></i> Decreasing
+                                                {% else %}
+                                                <i class="fas fa-equals text-warning"></i> Stable
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    Summary Analysis
+                                </div>
+                                <div class="card-body">
+                                    <p>{{ academic_record.summary_analysis }}</p>
+                                    <div class="d-grid gap-2">
+                                        <a href="{{ url_for('web.recommendations') }}" class="btn btn-primary">
+                                            View Detailed Recommendations
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Risk Factors Modal -->
+<div class="modal fade" id="riskFactorsModal" tabindex="-1" aria-labelledby="riskFactorsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="riskFactorsModalLabel">Detailed Risk Factor Analysis</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Risk Factor</th>
+                                <th>Description</th>
+                                <th>Impact</th>
+                                <th>Recommendation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for factor in risk_factors_detailed %}
+                            <tr>
+                                <td>{{ factor.name }}</td>
+                                <td>{{ factor.description }}</td>
+                                <td>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-{{ factor.color }}" role="progressbar" style="width: {{ factor.impact }}%"
+                                            aria-valuenow="{{ factor.impact }}" aria-valuemin="0" aria-valuemax="100">{{ factor.impact }}%</div>
+                                    </div>
+                                </td>
+                                <td>{{ factor.recommendation }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Download PDF Report</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Data Modal -->
+<div class="modal fade" id="updateDataModal" tabindex="-1" aria-labelledby="updateDataModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="updateDataModalLabel">Update Academic Data</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="updateDataForm">
+                    <div class="mb-3">
+                        <label for="unitsEnrolled" class="form-label">Units Enrolled (Current Semester)</label>
+                        <input type="number" class="form-control" id="unitsEnrolled" min="0">
+                    </div>
+                    <div class="mb-3">
+                        <label for="unitsApproved" class="form-label">Units Approved (Current Semester)</label>
+                        <input type="number" class="form-control" id="unitsApproved" min="0">
+                    </div>
+                    <div class="mb-3">
+                        <label for="currentGrade" class="form-label">Current Grade</label>
+                        <input type="number" class="form-control" id="currentGrade" min="0" max="20" step="0.1">
+                    </div>
+                    <div class="mb-3">
+                        <label for="attendanceRate" class="form-label">Attendance Rate (%)</label>
+                        <input type="number" class="form-control" id="attendanceRate" min="0" max="100">
+                    </div>
+                </form>
+                <div class="alert alert-info" role="alert">
+                    <i class="fas fa-info-circle me-2"></i> Updating your academic data will recalculate your risk scores and recommendations.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="updateDataBtn">Update & Recalculate</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Performance Trend Chart
+    var ctx = document.getElementById("performanceTrendChart");
+    var myLineChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ["Module 1", "Module 2", "Module 3", "Module 4", "Module 5", "Module 6"],
+            datasets: [{
+                label: "1st Semester",
+                lineTension: 0.3,
+                backgroundColor: "rgba(78, 115, 223, 0.05)",
+                borderColor: "rgba(78, 115, 223, 1)",
+                pointRadius: 3,
+                pointBackgroundColor: "rgba(78, 115, 223, 1)",
+                pointBorderColor: "rgba(78, 115, 223, 1)",
+                pointHoverRadius: 3,
+                pointHoverBackgroundColor: "rgba(78, 115, 223, 1)",
+                pointHoverBorderColor: "rgba(78, 115, 223, 1)",
+                pointHitRadius: 10,
+                pointBorderWidth: 2,
+                data: {{ semester1_grades|safe }},
+            },
+            {
+                label: "2nd Semester",
+                lineTension: 0.3,
+                backgroundColor: "rgba(40, 167, 69, 0.05)",
+                borderColor: "rgba(40, 167, 69, 1)",
+                pointRadius: 3,
+                pointBackgroundColor: "rgba(40, 167, 69, 1)",
+                pointBorderColor: "rgba(40, 167, 69, 1)",
+                pointHoverRadius: 3,
+                pointHoverBackgroundColor: "rgba(40, 167, 69, 1)",
+                pointHoverBorderColor: "rgba(40, 167, 69, 1)",
+                pointHitRadius: 10,
+                pointBorderWidth: 2,
+                data: {{ semester2_grades|safe }},
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    left: 10,
+                    right: 25,
+                    top: 25,
+                    bottom: 0
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        maxTicksLimit: 7
+                    }
+                },
+                y: {
+                    ticks: {
+                        maxTicksLimit: 5,
+                        padding: 10
+                    },
+                    grid: {
+                        color: "rgb(234, 236, 244)",
+                        zeroLineColor: "rgb(234, 236, 244)",
+                        drawBorder: false,
+                        borderDash: [2],
+                        zeroLineBorderDash: [2]
+                    }
+                },
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: "rgb(255,255,255)",
+                    bodyColor: "#858796",
+                    titleMarginBottom: 10,
+                    titleColor: '#6e707e',
+                    titleFont: {
+                        size: 14
+                    },
+                    borderColor: '#dddfeb',
+                    borderWidth: 1,
+                    xPadding: 15,
+                    yPadding: 15,
+                    displayColors: false,
+                    caretPadding: 10
+                }
+            }
+        }
+    });
+
+    // Performance Comparison Chart
+    var ctx2 = document.getElementById("performanceComparisonChart");
+    var myPieChart = new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+            labels: ["Your Performance", "Class Average"],
+            datasets: [{
+                data: [{{ student.overall_percentage }}, {{ class_average }}],
+                backgroundColor: ['#4e73df', '#e3e6f0'],
+                hoverBackgroundColor: ['#2e59d9', '#d1d3e2'],
+                hoverBorderColor: "rgba(234, 236, 244, 1)",
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            tooltips: {
+                backgroundColor: "rgb(255,255,255)",
+                bodyColor: "#858796",
+                borderColor: '#dddfeb',
+                borderWidth: 1,
+                xPadding: 15,
+                yPadding: 15,
+                displayColors: false,
+                caretPadding: 10,
+            },
+            legend: {
+                display: false
+            },
+            cutout: '70%',
+        },
+    });
+
+    // Function to toggle between different chart views
+    function toggleChartView(view) {
+        let labels = myLineChart.data.labels;
+        let dataset1 = myLineChart.data.datasets[0];
+        let dataset2 = myLineChart.data.datasets[1];
+        
+        if (view === 'grades') {
+            dataset1.data = {{ semester1_grades|safe }};
+            dataset2.data = {{ semester2_grades|safe }};
+            myLineChart.options.scales.y.title = { display: true, text: 'Grade' };
+        } else if (view === 'units') {
+            dataset1.data = {{ semester1_units|safe }};
+            dataset2.data = {{ semester2_units|safe }};
+            myLineChart.options.scales.y.title = { display: true, text: 'Units Completed' };
+        } else if (view === 'risk') {
+            dataset1.data = {{ semester1_risk|safe }};
+            dataset2.data = {{ semester2_risk|safe }};
+            myLineChart.options.scales.y.title = { display: true, text: 'Risk Score' };
+        }
+        
+        myLineChart.update();
+    }
+
+    // Function to download chart as PNG
+    function downloadChartAsPNG() {
+        const canvas = document.getElementById('performanceTrendChart');
+        const image = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = 'performance-trend.png';
+        link.href = image;
+        link.click();
+    }
+
+    // Handle Update Data Form
+    document.getElementById('updateDataBtn').addEventListener('click', function() {
+        // Get form values
+        const unitsEnrolled = document.getElementById('unitsEnrolled').value;
+        const unitsApproved = document.getElementById('unitsApproved').value;
+        const currentGrade = document.getElementById('currentGrade').value;
+        const attendanceRate = document.getElementById('attendanceRate').value;
+        
+        // Validate form
+        if (!unitsEnrolled || !unitsApproved || !currentGrade || !attendanceRate) {
+            alert('Please fill all fields');
+            return;
+        }
+        
+        // Send data to server (simulate for now)
+        console.log('Sending data to server:', {
+            unitsEnrolled,
+            unitsApproved,
+            currentGrade,
+            attendanceRate
+        });
+        
+        // Show loader
+        document.getElementById('updateDataBtn').innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+        
+        // Simulate server processing
+        setTimeout(function() {
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('updateDataModal'));
+            modal.hide();
+            
+            // Show success message
+            const toast = new bootstrap.Toast(document.getElementById('liveToast'));
+            document.getElementById('toastTitle').innerHTML = 'Data Updated';
+            document.getElementById('toastMessage').innerHTML = 'Your academic data has been updated and risk scores recalculated.';
+            document.getElementById('toastTime').innerHTML = 'Just now';
+            toast.show();
+            
+            // Reset button
+            document.getElementById('updateDataBtn').innerHTML = 'Update & Recalculate';
+            
+            // Reload page to show updated data (in real app, would update via AJAX)
+            setTimeout(function() {
+                location.reload();
+            }, 1500);
+        }, 2000);
+    });
+</script>
+{% endblock %}
